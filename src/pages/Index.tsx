@@ -1,16 +1,47 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
+import { HeroSection } from "@/components/HeroSection";
+import { TrustBanner } from "@/components/TrustBanner";
+import { VehicleCard } from "@/components/VehicleCard";
+import { Button } from "@/components/ui/button";
+import { vehicles } from "@/data/vehicles";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const featured = vehicles.filter((v) => v.featured);
+
+const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <HeroSection />
+      <TrustBanner />
+
+      {/* Featured Listings */}
+      <section className="container py-10 space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl md:text-2xl font-bold">Featured Listings</h2>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/listings" className="flex items-center gap-1 text-sm">
+              View All <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {featured.map((v) => (
+            <VehicleCard key={v.id} vehicle={v} />
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="mt-auto border-t bg-card">
+        <div className="container py-6 text-center text-xs text-muted-foreground">
+          © 2026 AutoXpert™. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
