@@ -75,16 +75,16 @@ const suvModels: Record<string, string[]> = {
 };
 
 const motoModels: Record<string, string[]> = {
-  "Harley-Davidson": ["Sportster S", "Iron 883", "Fat Boy"],
-  Kawasaki: ["Ninja 650", "Ninja ZX-6R", "Z900"],
-  Yamaha: ["MT-07", "YZF-R3", "Tenere 700"],
-  Honda: ["CBR650R", "CB500X", "Rebel 1100"],
-  Suzuki: ["GSX-R750", "SV650"],
-  Ducati: ["Monster 937", "Panigale V2", "Scrambler Icon"],
-  BMW: ["R 1250 GS", "S 1000 RR"],
-  KTM: ["Duke 390", "890 Adventure"],
-  Triumph: ["Street Triple", "Bonneville T120"],
-  "Royal Enfield": ["Continental GT 650", "Himalayan"],
+  "Harley-Davidson": ["Sportster S", "Iron 883", "Fat Boy", "Street Glide"],
+  Kawasaki: ["Ninja 650", "Ninja ZX-6R", "Z900", "Versys 1000"],
+  Yamaha: ["MT-07", "YZF-R3", "Tenere 700", "MT-09"],
+  Honda: ["CBR650R", "CB500X", "Rebel 1100", "Africa Twin"],
+  Suzuki: ["GSX-R750", "SV650", "V-Strom 650"],
+  Ducati: ["Monster 937", "Panigale V2", "Scrambler Icon", "Multistrada V4"],
+  BMW: ["R 1250 GS", "S 1000 RR", "F 900 R"],
+  KTM: ["Duke 390", "890 Adventure", "1290 Super Duke"],
+  Triumph: ["Street Triple", "Bonneville T120", "Tiger 900"],
+  "Royal Enfield": ["Continental GT 650", "Himalayan", "Meteor 350"],
 };
 
 const cities = [
