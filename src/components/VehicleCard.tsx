@@ -2,7 +2,9 @@ import { Link } from "react-router-dom";
 import { MapPin, Gauge, ShieldCheck, MessageCircle, ArrowRightLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SmartImage } from "@/components/SmartImage";
 import type { Vehicle } from "@/data/vehicles";
+
 
 interface Props {
   vehicle: Vehicle;
@@ -22,12 +24,13 @@ export function VehicleCard({ vehicle }: Props) {
     >
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <img
-          src={vehicle.image}
+        <SmartImage
+          sources={vehicle.imageSources}
           alt={vehicle.title}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
+
         {vehicle.verified && (
           <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-xs font-medium backdrop-blur">
             <ShieldCheck className="h-3 w-3 text-success" />

@@ -37,6 +37,10 @@ export interface Vehicle {
   description?: string;
   specs?: VehicleSpecs;
   seller?: Seller;
+  /** Ordered fallback chain for the cover image (image === imageSources[0]). */
+  imageSources: string[];
+  /** One ordered fallback chain per gallery slot. */
+  gallerySources: string[][];
 }
 
 // ---------- Catalog ----------
@@ -95,30 +99,8 @@ const cities = [
   "Philadelphia, PA", "Washington, DC", "Salt Lake City, UT",
 ];
 
-// ---------- Image resolution ----------
-// LoremFlickr returns Flickr photos matching the given keywords, locked by a
-// numeric seed so the same vehicle always renders the same image. This gives
-// us make/model-accurate pictures (e.g. an Audi Q7 actually looks like a Q7)
-// without bundling hundreds of static URLs per model.
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+import { imageCandidates } from "./vehicleImages";
 
-const typeKeyword: Record<VehicleType, string> = {
-  sedan: "sedan,car",
-  suv: "suv",
-  motorcycle: "motorcycle",
-};
-
-const vehicleImage = (
-  make: string,
-  model: string,
-  type: VehicleType,
-  seed: number,
-) => {
-  // Strip trim suffixes (e.g. "Pilot Touring" -> "pilot") so Flickr matches the model itself.
-  const baseModel = slug(model.split(/\s+/)[0]);
-  const keywords = `${slug(make)},${baseModel},${typeKeyword[type]}`;
-  return `https://loremflickr.com/800/600/${keywords}?lock=${seed}`;
-};
 
 const sellerNames = [
   "AutoXpert Certified Dealer", "Westside Auto Group", "Premier Motors",
@@ -164,7 +146,11 @@ const generate = (): Vehicle[] => {
         const verified = rand() > 0.35;
         const featured = rand() > 0.78;
         const title = `${year} ${make} ${model}`;
-        const image = vehicleImage(make, model, type, id * 10 + 1);
+        const slotChains = [1, 2, 3, 4].map((slot) =>
+          imageCandidates(make, model, type, id * 10 + slot),
+        );
+        const imageSources = slotChains[0];
+        const image = imageSources[0];
         const sellerName = pick(sellerNames, rand());
         const specs: VehicleSpecs = {
           engine: type === "motorcycle"
@@ -196,17 +182,15 @@ const generate = (): Vehicle[] => {
           location: pick(cities, rand()),
           condition,
           image,
-          gallery: [
-            image,
-            vehicleImage(make, model, type, id * 10 + 2),
-            vehicleImage(make, model, type, id * 10 + 3),
-            vehicleImage(make, model, type, id * 10 + 4),
-          ],
+          gallery: slotChains.map((c) => c[0]),
+          imageSources,
+          gallerySources: slotChains,
           verified,
           featured,
           specs,
           seller,
         };
+
         v.description = baseDescription(v);
         list.push(v);
       }

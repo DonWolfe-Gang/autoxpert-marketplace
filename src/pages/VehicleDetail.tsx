@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { vehicles } from "@/data/vehicles";
+import { SmartImage } from "@/components/SmartImage";
 import { supabase } from "@/integrations/supabase/client";
+
 
 const VehicleDetail = () => {
   const { id } = useParams();
@@ -31,7 +33,9 @@ const VehicleDetail = () => {
     );
   }
 
-  const gallery = vehicle.gallery ?? [vehicle.image];
+  const gallerySources = vehicle.gallerySources?.length ? vehicle.gallerySources : [vehicle.imageSources];
+  const gallery = gallerySources.map((c) => c[0]);
+
   const specs = vehicle.specs!;
   const seller = vehicle.seller!;
 
@@ -81,7 +85,7 @@ const VehicleDetail = () => {
           {/* Gallery */}
           <div className="space-y-3">
             <div className="relative aspect-video overflow-hidden rounded-lg border bg-muted">
-              <img src={gallery[activeImg]} alt={vehicle.title} className="h-full w-full object-cover animate-fade-in" key={activeImg} />
+              <SmartImage sources={gallerySources[activeImg]} alt={vehicle.title} className="h-full w-full object-cover animate-fade-in" key={activeImg} />
               <div className="absolute top-3 left-3 flex gap-2">
                 {vehicle.verified && (
                   <Badge className="bg-card/90 text-foreground backdrop-blur flex items-center gap-1">
@@ -109,7 +113,7 @@ const VehicleDetail = () => {
                       i === activeImg ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <img src={g} alt="" className="h-full w-full object-cover" />
+                    <SmartImage sources={gallerySources[i]} alt="" className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
