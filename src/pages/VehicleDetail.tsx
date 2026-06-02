@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { vehicles } from "@/data/vehicles";
+import { SmartImage } from "@/components/SmartImage";
 import { supabase } from "@/integrations/supabase/client";
+
 
 const VehicleDetail = () => {
   const { id } = useParams();
