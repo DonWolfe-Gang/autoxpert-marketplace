@@ -99,30 +99,8 @@ const cities = [
   "Philadelphia, PA", "Washington, DC", "Salt Lake City, UT",
 ];
 
-// ---------- Image resolution ----------
-// LoremFlickr returns Flickr photos matching the given keywords, locked by a
-// numeric seed so the same vehicle always renders the same image. This gives
-// us make/model-accurate pictures (e.g. an Audi Q7 actually looks like a Q7)
-// without bundling hundreds of static URLs per model.
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+import { imageCandidates } from "./vehicleImages";
 
-const typeKeyword: Record<VehicleType, string> = {
-  sedan: "sedan,car",
-  suv: "suv",
-  motorcycle: "motorcycle",
-};
-
-const vehicleImage = (
-  make: string,
-  model: string,
-  type: VehicleType,
-  seed: number,
-) => {
-  // Strip trim suffixes (e.g. "Pilot Touring" -> "pilot") so Flickr matches the model itself.
-  const baseModel = slug(model.split(/\s+/)[0]);
-  const keywords = `${slug(make)},${baseModel},${typeKeyword[type]}`;
-  return `https://loremflickr.com/800/600/${keywords}?lock=${seed}`;
-};
 
 const sellerNames = [
   "AutoXpert Certified Dealer", "Westside Auto Group", "Premier Motors",
