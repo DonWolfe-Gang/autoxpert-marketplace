@@ -113,7 +113,7 @@ const VehicleDetail = () => {
                       i === activeImg ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <img src={g} alt="" className="h-full w-full object-cover" />
+                    <SmartImage sources={gallerySources[i]} alt="" className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
