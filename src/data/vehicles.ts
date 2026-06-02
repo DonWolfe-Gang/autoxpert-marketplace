@@ -1,6 +1,24 @@
 export type VehicleType = "sedan" | "suv" | "motorcycle";
 export type Condition = "excellent" | "good" | "fair";
 
+export interface VehicleSpecs {
+  engine: string;
+  transmission: string;
+  fuel: string;
+  drivetrain: string;
+  exteriorColor: string;
+  interiorColor: string;
+  vin: string;
+}
+
+export interface Seller {
+  name: string;
+  rating: number;
+  reviews: number;
+  responseTime: string;
+  memberSince: string;
+}
+
 export interface Vehicle {
   id: string;
   title: string;
@@ -13,9 +31,44 @@ export interface Vehicle {
   location: string;
   condition: Condition;
   image: string;
+  gallery?: string[];
   verified: boolean;
   featured: boolean;
+  description?: string;
+  specs?: VehicleSpecs;
+  seller?: Seller;
 }
+
+const defaultSpecs = (partial: Partial<VehicleSpecs> = {}): VehicleSpecs => ({
+  engine: "2.5L 4-Cylinder",
+  transmission: "Automatic",
+  fuel: "Gasoline",
+  drivetrain: "FWD",
+  exteriorColor: "Midnight Black",
+  interiorColor: "Charcoal",
+  vin: "1HGCM82633A123456",
+  ...partial,
+});
+
+const defaultSeller = (partial: Partial<Seller> = {}): Seller => ({
+  name: "AutoXpert Certified Dealer",
+  rating: 4.8,
+  reviews: 124,
+  responseTime: "Within 1 hour",
+  memberSince: "2022",
+  ...partial,
+});
+
+const baseDescription = (v: { title: string; condition: Condition; mileage: number }) =>
+  `This ${v.title} is in ${v.condition} condition with ${v.mileage.toLocaleString()} miles. Fully inspected by our certified technicians, clean title, no accidents reported. Ready for a new owner — financing and trade-ins welcome.`;
+
+const enrich = (v: Vehicle): Vehicle => ({
+  ...v,
+  gallery: v.gallery ?? [v.image, v.image, v.image],
+  description: v.description ?? baseDescription(v),
+  specs: v.specs ?? defaultSpecs(),
+  seller: v.seller ?? defaultSeller(),
+});
 
 export const vehicles: Vehicle[] = [
   {
@@ -29,7 +82,7 @@ export const vehicles: Vehicle[] = [
     mileage: 32000,
     location: "Los Angeles, CA",
     condition: "excellent",
-    image: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop",
     verified: true,
     featured: true,
   },
@@ -44,7 +97,7 @@ export const vehicles: Vehicle[] = [
     mileage: 41000,
     location: "Houston, TX",
     condition: "excellent",
-    image: "https://images.unsplash.com/photo-1568844293986-8d0400f085d1?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1568844293986-8d0400f085d1?w=800&h=600&fit=crop",
     verified: true,
     featured: true,
   },
@@ -59,7 +112,7 @@ export const vehicles: Vehicle[] = [
     mileage: 12000,
     location: "Miami, FL",
     condition: "good",
-    image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&h=600&fit=crop",
     verified: false,
     featured: true,
   },
@@ -74,7 +127,7 @@ export const vehicles: Vehicle[] = [
     mileage: 18000,
     location: "Chicago, IL",
     condition: "excellent",
-    image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
     verified: true,
     featured: true,
   },
@@ -89,7 +142,7 @@ export const vehicles: Vehicle[] = [
     mileage: 45000,
     location: "Dallas, TX",
     condition: "good",
-    image: "https://images.unsplash.com/photo-1584345604476-8ec5f452d1f2?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1584345604476-8ec5f452d1f2?w=800&h=600&fit=crop",
     verified: true,
     featured: false,
   },
@@ -104,7 +157,7 @@ export const vehicles: Vehicle[] = [
     mileage: 8500,
     location: "Phoenix, AZ",
     condition: "excellent",
-    image: "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=800&h=600&fit=crop",
     verified: false,
     featured: false,
   },
@@ -119,7 +172,7 @@ export const vehicles: Vehicle[] = [
     mileage: 22000,
     location: "Atlanta, GA",
     condition: "excellent",
-    image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=600&fit=crop",
     verified: true,
     featured: true,
   },
@@ -134,7 +187,7 @@ export const vehicles: Vehicle[] = [
     mileage: 38000,
     location: "Denver, CO",
     condition: "good",
-    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop",
     verified: true,
     featured: false,
   },
@@ -149,7 +202,7 @@ export const vehicles: Vehicle[] = [
     mileage: 58000,
     location: "Portland, OR",
     condition: "fair",
-    image: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop",
     verified: false,
     featured: false,
   },
@@ -164,11 +217,11 @@ export const vehicles: Vehicle[] = [
     mileage: 8000,
     location: "San Francisco, CA",
     condition: "excellent",
-    image: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=600&fit=crop",
     verified: true,
     featured: true,
   },
-];
+].map(enrich);
 
 export const makes = [...new Set(vehicles.map((v) => v.make))];
 export const vehicleTypes: VehicleType[] = ["sedan", "suv", "motorcycle"];

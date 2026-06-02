@@ -1,71 +1,205 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Gauge, Calendar, ShieldCheck, MessageCircle, ArrowRightLeft } from "lucide-react";
+import {
+  ArrowLeft, MapPin, Gauge, Calendar, ShieldCheck, MessageCircle,
+  ArrowRightLeft, Heart, Share2, Fuel, Settings2, Palette, Star, Phone,
+} from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 import { vehicles } from "@/data/vehicles";
 
 const VehicleDetail = () => {
   const { id } = useParams();
   const vehicle = vehicles.find((v) => v.id === id);
+  const [activeImg, setActiveImg] = useState(0);
+  const [saved, setSaved] = useState(false);
 
   if (!vehicle) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Vehicle not found.</p>
+          <div className="text-center space-y-3">
+            <p className="text-muted-foreground">Vehicle not found.</p>
+            <Button asChild variant="outline"><Link to="/listings">Back to listings</Link></Button>
+          </div>
         </div>
       </div>
     );
   }
 
+  const gallery = vehicle.gallery ?? [vehicle.image];
+  const specs = vehicle.specs!;
+  const seller = vehicle.seller!;
+
+  const share = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: vehicle.title, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link copied to clipboard" });
+      }
+    } catch { /* user cancelled */ }
+  };
+
+  const specRows: { icon: typeof Fuel; label: string; value: string }[] = [
+    { icon: Settings2, label: "Engine", value: specs.engine },
+    { icon: Settings2, label: "Transmission", value: specs.transmission },
+    { icon: Fuel, label: "Fuel", value: specs.fuel },
+    { icon: Settings2, label: "Drivetrain", value: specs.drivetrain },
+    { icon: Palette, label: "Exterior", value: specs.exteriorColor },
+    { icon: Palette, label: "Interior", value: specs.interiorColor },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-secondary/30">
       <Navbar />
 
-      <div className="container py-6 space-y-6 max-w-3xl">
+      <div className="container py-6 space-y-6 max-w-5xl">
         <Link to="/listings" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to listings
         </Link>
 
-        <div className="rounded-lg overflow-hidden border bg-card">
-          <div className="aspect-video bg-muted">
-            <img src={vehicle.image} alt={vehicle.title} className="h-full w-full object-cover" />
-          </div>
-
-          <div className="p-4 md:p-6 space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold">{vehicle.title}</h1>
-                <p className="text-2xl md:text-3xl font-extrabold text-primary mt-1">
-                  ${vehicle.price.toLocaleString()}
-                </p>
+        <div className="grid md:grid-cols-[1.4fr_1fr] gap-6">
+          {/* Gallery */}
+          <div className="space-y-3">
+            <div className="relative aspect-video overflow-hidden rounded-lg border bg-muted">
+              <img src={gallery[activeImg]} alt={vehicle.title} className="h-full w-full object-cover animate-fade-in" key={activeImg} />
+              <div className="absolute top-3 left-3 flex gap-2">
+                {vehicle.verified && (
+                  <Badge className="bg-card/90 text-foreground backdrop-blur flex items-center gap-1">
+                    <ShieldCheck className="h-3 w-3 text-success" /> Verified
+                  </Badge>
+                )}
+                <Badge variant="secondary" className="capitalize">{vehicle.condition}</Badge>
               </div>
-              {vehicle.verified && (
-                <Badge variant="outline" className="flex items-center gap-1 shrink-0">
-                  <ShieldCheck className="h-3 w-3 text-success" /> Verified
-                </Badge>
-              )}
+              <div className="absolute top-3 right-3 flex gap-2">
+                <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => setSaved(!saved)} aria-label="Save">
+                  <Heart className={`h-4 w-4 ${saved ? "fill-destructive text-destructive" : ""}`} />
+                </Button>
+                <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={share} aria-label="Share">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {gallery.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {gallery.map((g, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className={`aspect-video overflow-hidden rounded-md border-2 transition-all ${
+                      i === activeImg ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={g} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Summary + actions */}
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-card p-4 md:p-5 space-y-3">
+              <div className="space-y-1">
+                <h1 className="text-xl md:text-2xl font-bold leading-tight">{vehicle.title}</h1>
+                <p className="text-3xl font-extrabold text-primary">${vehicle.price.toLocaleString()}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <div className="rounded-md bg-secondary p-2 text-center">
+                  <Calendar className="h-4 w-4 mx-auto text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground mt-1">Year</p>
+                  <p className="text-sm font-semibold">{vehicle.year}</p>
+                </div>
+                <div className="rounded-md bg-secondary p-2 text-center">
+                  <Gauge className="h-4 w-4 mx-auto text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground mt-1">Mileage</p>
+                  <p className="text-sm font-semibold">{(vehicle.mileage / 1000).toFixed(0)}k mi</p>
+                </div>
+                <div className="rounded-md bg-secondary p-2 text-center">
+                  <MapPin className="h-4 w-4 mx-auto text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground mt-1">Location</p>
+                  <p className="text-sm font-semibold truncate">{vehicle.location.split(",")[0]}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button className="flex-1" onClick={() => toast({ title: "Message sent", description: "The seller will reply shortly." })}>
+                  <MessageCircle className="h-4 w-4 mr-2" /> Contact
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={() => toast({ title: "Trade proposed" })}>
+                  <ArrowRightLeft className="h-4 w-4 mr-2" /> Trade
+                </Button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><Gauge className="h-4 w-4" /> {vehicle.mileage.toLocaleString()} mi</span>
-              <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {vehicle.location}</span>
-              <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> {vehicle.year}</span>
-              <Badge variant="secondary" className="capitalize">{vehicle.condition}</Badge>
-              <Badge variant="secondary" className="capitalize">{vehicle.type}</Badge>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button className="flex-1" onClick={() => alert("Contact feature coming soon!")}>
-                <MessageCircle className="h-4 w-4 mr-2" /> Contact Seller
-              </Button>
-              <Button variant="outline" className="flex-1" onClick={() => alert("Trade feature coming soon!")}>
-                <ArrowRightLeft className="h-4 w-4 mr-2" /> Propose Trade
+            {/* Seller card */}
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+              <h2 className="text-sm font-bold">Seller</h2>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  {seller.name.charAt(0)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{seller.name}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-warning text-warning" />{seller.rating} ({seller.reviews})</span>
+                    <span>· Since {seller.memberSince}</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Responds {seller.responseTime.toLowerCase()}</p>
+              <Button variant="outline" size="sm" className="w-full" onClick={() => toast({ title: "Call requested" })}>
+                <Phone className="h-3 w-3 mr-2" /> Request a call
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Description */}
+        <div className="rounded-lg border bg-card p-4 md:p-5 space-y-2">
+          <h2 className="text-sm font-bold">About this vehicle</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">{vehicle.description}</p>
+        </div>
+
+        {/* Specs */}
+        <div className="rounded-lg border bg-card p-4 md:p-5 space-y-3">
+          <h2 className="text-sm font-bold">Specifications</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {specRows.map((r) => {
+              const Icon = r.icon;
+              return (
+                <div key={r.label} className="flex items-start gap-2">
+                  <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">{r.label}</p>
+                    <p className="text-sm font-medium truncate">{r.value}</p>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex items-start gap-2 col-span-2 md:col-span-3">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">VIN</p>
+                <p className="text-sm font-mono">{specs.vin}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Consult CTA */}
+        <div className="rounded-lg border bg-gradient-to-br from-primary/10 to-accent/10 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+          <div>
+            <h3 className="font-bold">Not sure yet?</h3>
+            <p className="text-sm text-muted-foreground">Book a 30-minute call with an AutoXpert advisor before you buy.</p>
+          </div>
+          <Button asChild>
+            <Link to="/consultation">Book consultation</Link>
+          </Button>
         </div>
       </div>
     </div>
