@@ -85,7 +85,7 @@ const VehicleDetail = () => {
           {/* Gallery */}
           <div className="space-y-3">
             <div className="relative aspect-video overflow-hidden rounded-lg border bg-muted">
-              <img src={gallery[activeImg]} alt={vehicle.title} className="h-full w-full object-cover animate-fade-in" key={activeImg} />
+              <SmartImage sources={gallerySources[activeImg]} alt={vehicle.title} className="h-full w-full object-cover animate-fade-in" key={activeImg} />
               <div className="absolute top-3 left-3 flex gap-2">
                 {vehicle.verified && (
                   <Badge className="bg-card/90 text-foreground backdrop-blur flex items-center gap-1">
