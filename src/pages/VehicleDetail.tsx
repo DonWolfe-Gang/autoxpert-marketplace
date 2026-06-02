@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { vehicles } from "@/data/vehicles";
+import { supabase } from "@/integrations/supabase/client";
 
 const VehicleDetail = () => {
   const { id } = useParams();
@@ -43,6 +44,19 @@ const VehicleDetail = () => {
         toast({ title: "Link copied to clipboard" });
       }
     } catch { /* user cancelled */ }
+  };
+
+  const logInquiry = async (type: "message" | "call" | "trade") => {
+    const { error } = await supabase.from("vehicle_inquiries").insert({
+      vehicle_id: vehicle.id,
+      vehicle_title: vehicle.title,
+      inquiry_type: type,
+    });
+    if (error) {
+      toast({ title: "Something went wrong", description: error.message, variant: "destructive" });
+      return false;
+    }
+    return true;
   };
 
   const specRows: { icon: typeof Fuel; label: string; value: string }[] = [
@@ -127,10 +141,15 @@ const VehicleDetail = () => {
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
-                <Button className="flex-1" onClick={() => toast({ title: "Message sent", description: "The seller will reply shortly." })}>
+                <Button className="flex-1" onClick={async () => {
+                  if (await logInquiry("message"))
+                    toast({ title: "Message sent", description: "The seller will reply shortly." });
+                }}>
                   <MessageCircle className="h-4 w-4 mr-2" /> Contact
                 </Button>
-                <Button variant="outline" className="flex-1" onClick={() => toast({ title: "Trade proposed" })}>
+                <Button variant="outline" className="flex-1" onClick={async () => {
+                  if (await logInquiry("trade")) toast({ title: "Trade proposed" });
+                }}>
                   <ArrowRightLeft className="h-4 w-4 mr-2" /> Trade
                 </Button>
               </div>
@@ -152,7 +171,9 @@ const VehicleDetail = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Responds {seller.responseTime.toLowerCase()}</p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => toast({ title: "Call requested" })}>
+              <Button variant="outline" size="sm" className="w-full" onClick={async () => {
+                if (await logInquiry("call")) toast({ title: "Call requested" });
+              }}>
                 <Phone className="h-3 w-3 mr-2" /> Request a call
               </Button>
             </div>

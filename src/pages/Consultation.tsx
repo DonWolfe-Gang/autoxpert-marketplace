@@ -9,19 +9,38 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { consultationServices, timeSlots } from "@/data/consultations";
+import { supabase } from "@/integrations/supabase/client";
 
 const Consultation = () => {
   const [selectedId, setSelectedId] = useState<string>(consultationServices[1].id);
   const [date, setDate] = useState("");
   const [slot, setSlot] = useState<string>("");
   const [form, setForm] = useState({ name: "", email: "", phone: "", notes: "" });
+  const [submitting, setSubmitting] = useState(false);
 
   const selected = consultationServices.find((s) => s.id === selectedId)!;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!date || !slot) {
       toast({ title: "Please pick a date and time", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("consultation_bookings").insert({
+      service_id: selected.id,
+      service_name: selected.name,
+      price: selected.price,
+      preferred_date: date,
+      time_slot: slot,
+      full_name: form.name,
+      email: form.email,
+      phone: form.phone || null,
+      notes: form.notes || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast({ title: "Could not save booking", description: error.message, variant: "destructive" });
       return;
     }
     toast({
@@ -153,7 +172,9 @@ const Consultation = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full">Confirm booking · ${selected.price}</Button>
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? "Saving…" : `Confirm booking · $${selected.price}`}
+          </Button>
           <p className="text-[11px] text-muted-foreground text-center">
             Free cancellation up to 24h before your session.{" "}
             <Link to="/learn" className="underline">Read our guides</Link>
