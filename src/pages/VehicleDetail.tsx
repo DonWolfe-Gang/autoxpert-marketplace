@@ -33,7 +33,9 @@ const VehicleDetail = () => {
     );
   }
 
-  const gallery = vehicle.gallery ?? [vehicle.image];
+  const gallerySources = vehicle.gallerySources?.length ? vehicle.gallerySources : [vehicle.imageSources];
+  const gallery = gallerySources.map((c) => c[0]);
+
   const specs = vehicle.specs!;
   const seller = vehicle.seller!;
 
