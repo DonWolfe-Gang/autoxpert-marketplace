@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      car_listings: {
+        Row: {
+          contact: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          images: string[]
+          location: string | null
+          make: string | null
+          mileage: number | null
+          model: string | null
+          price: number | null
+          raw_text: string | null
+          source: string
+          source_chat_id: number | null
+          source_message_id: number | null
+          status: string
+          title: string
+          updated_at: string
+          vehicle_type: string | null
+          year: number | null
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          images?: string[]
+          location?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          raw_text?: string | null
+          source?: string
+          source_chat_id?: number | null
+          source_message_id?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          vehicle_type?: string | null
+          year?: number | null
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          images?: string[]
+          location?: string | null
+          make?: string | null
+          mileage?: number | null
+          model?: string | null
+          price?: number | null
+          raw_text?: string | null
+          source?: string
+          source_chat_id?: number | null
+          source_message_id?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          vehicle_type?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       consultation_bookings: {
         Row: {
           created_at: string
@@ -56,6 +125,42 @@ export type Database = {
           service_name?: string
           status?: string
           time_slot?: string
+        }
+        Relationships: []
+      }
+      telegram_messages: {
+        Row: {
+          chat_id: number
+          chat_title: string | null
+          created_at: string
+          processed: boolean
+          raw_update: Json
+          text: string | null
+          update_id: number
+          user_id: number | null
+          username: string | null
+        }
+        Insert: {
+          chat_id: number
+          chat_title?: string | null
+          created_at?: string
+          processed?: boolean
+          raw_update: Json
+          text?: string | null
+          update_id: number
+          user_id?: number | null
+          username?: string | null
+        }
+        Update: {
+          chat_id?: number
+          chat_title?: string | null
+          created_at?: string
+          processed?: boolean
+          raw_update?: Json
+          text?: string | null
+          update_id?: number
+          user_id?: number | null
+          username?: string | null
         }
         Relationships: []
       }
