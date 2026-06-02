@@ -146,7 +146,11 @@ const generate = (): Vehicle[] => {
         const verified = rand() > 0.35;
         const featured = rand() > 0.78;
         const title = `${year} ${make} ${model}`;
-        const image = vehicleImage(make, model, type, id * 10 + 1);
+        const slotChains = [1, 2, 3, 4].map((slot) =>
+          imageCandidates(make, model, type, id * 10 + slot),
+        );
+        const imageSources = slotChains[0];
+        const image = imageSources[0];
         const sellerName = pick(sellerNames, rand());
         const specs: VehicleSpecs = {
           engine: type === "motorcycle"
@@ -178,17 +182,15 @@ const generate = (): Vehicle[] => {
           location: pick(cities, rand()),
           condition,
           image,
-          gallery: [
-            image,
-            vehicleImage(make, model, type, id * 10 + 2),
-            vehicleImage(make, model, type, id * 10 + 3),
-            vehicleImage(make, model, type, id * 10 + 4),
-          ],
+          gallery: slotChains.map((c) => c[0]),
+          imageSources,
+          gallerySources: slotChains,
           verified,
           featured,
           specs,
           seller,
         };
+
         v.description = baseDescription(v);
         list.push(v);
       }
