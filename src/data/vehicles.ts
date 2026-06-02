@@ -37,6 +37,10 @@ export interface Vehicle {
   description?: string;
   specs?: VehicleSpecs;
   seller?: Seller;
+  /** Ordered fallback chain for the cover image (image === imageSources[0]). */
+  imageSources: string[];
+  /** One ordered fallback chain per gallery slot. */
+  gallerySources: string[][];
 }
 
 // ---------- Catalog ----------
