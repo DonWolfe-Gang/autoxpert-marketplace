@@ -141,10 +141,15 @@ const VehicleDetail = () => {
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
-                <Button className="flex-1" onClick={() => toast({ title: "Message sent", description: "The seller will reply shortly." })}>
+                <Button className="flex-1" onClick={async () => {
+                  if (await logInquiry("message"))
+                    toast({ title: "Message sent", description: "The seller will reply shortly." });
+                }}>
                   <MessageCircle className="h-4 w-4 mr-2" /> Contact
                 </Button>
-                <Button variant="outline" className="flex-1" onClick={() => toast({ title: "Trade proposed" })}>
+                <Button variant="outline" className="flex-1" onClick={async () => {
+                  if (await logInquiry("trade")) toast({ title: "Trade proposed" });
+                }}>
                   <ArrowRightLeft className="h-4 w-4 mr-2" /> Trade
                 </Button>
               </div>
