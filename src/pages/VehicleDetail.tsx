@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { vehicles } from "@/data/vehicles";
+import { supabase } from "@/integrations/supabase/client";
 
 const VehicleDetail = () => {
   const { id } = useParams();
@@ -43,6 +44,19 @@ const VehicleDetail = () => {
         toast({ title: "Link copied to clipboard" });
       }
     } catch { /* user cancelled */ }
+  };
+
+  const logInquiry = async (type: "message" | "call" | "trade") => {
+    const { error } = await supabase.from("vehicle_inquiries").insert({
+      vehicle_id: vehicle.id,
+      vehicle_title: vehicle.title,
+      inquiry_type: type,
+    });
+    if (error) {
+      toast({ title: "Something went wrong", description: error.message, variant: "destructive" });
+      return false;
+    }
+    return true;
   };
 
   const specRows: { icon: typeof Fuel; label: string; value: string }[] = [
