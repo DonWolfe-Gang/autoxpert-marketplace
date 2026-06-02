@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      consultation_bookings: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          preferred_date: string
+          price: number
+          service_id: string
+          service_name: string
+          status: string
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          preferred_date: string
+          price: number
+          service_id: string
+          service_name: string
+          status?: string
+          time_slot: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          preferred_date?: string
+          price?: number
+          service_id?: string
+          service_name?: string
+          status?: string
+          time_slot?: string
+        }
+        Relationships: []
+      }
+      vehicle_inquiries: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          inquiry_type: string
+          message: string | null
+          phone: string | null
+          vehicle_id: string
+          vehicle_title: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          inquiry_type?: string
+          message?: string | null
+          phone?: string | null
+          vehicle_id: string
+          vehicle_title: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          inquiry_type?: string
+          message?: string | null
+          phone?: string | null
+          vehicle_id?: string
+          vehicle_title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
