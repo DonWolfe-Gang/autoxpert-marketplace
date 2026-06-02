@@ -171,7 +171,9 @@ const VehicleDetail = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Responds {seller.responseTime.toLowerCase()}</p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => toast({ title: "Call requested" })}>
+              <Button variant="outline" size="sm" className="w-full" onClick={async () => {
+                if (await logInquiry("call")) toast({ title: "Call requested" });
+              }}>
                 <Phone className="h-3 w-3 mr-2" /> Request a call
               </Button>
             </div>
