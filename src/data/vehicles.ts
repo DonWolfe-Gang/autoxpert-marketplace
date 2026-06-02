@@ -151,7 +151,6 @@ const generate = (): Vehicle[] => {
   const push = (
     type: VehicleType,
     makeModelMap: Record<string, string[]>,
-    imgs: string[],
     priceRange: [number, number],
     mileageRange: [number, number]
   ) => {
@@ -164,8 +163,8 @@ const generate = (): Vehicle[] => {
         const condition: Condition = conditionRoll > 0.7 ? "excellent" : conditionRoll > 0.3 ? "good" : "fair";
         const verified = rand() > 0.35;
         const featured = rand() > 0.78;
-        const image = pick(imgs, rand());
         const title = `${year} ${make} ${model}`;
+        const image = vehicleImage(make, model, type, id * 10 + 1);
         const sellerName = pick(sellerNames, rand());
         const specs: VehicleSpecs = {
           engine: type === "motorcycle"
@@ -197,7 +196,12 @@ const generate = (): Vehicle[] => {
           location: pick(cities, rand()),
           condition,
           image,
-          gallery: [image, pick(imgs, rand()), pick(imgs, rand()), pick(imgs, rand())],
+          gallery: [
+            image,
+            vehicleImage(make, model, type, id * 10 + 2),
+            vehicleImage(make, model, type, id * 10 + 3),
+            vehicleImage(make, model, type, id * 10 + 4),
+          ],
           verified,
           featured,
           specs,
@@ -209,9 +213,10 @@ const generate = (): Vehicle[] => {
     }
   };
 
-  push("sedan", sedanModels, sedanImgs, [12000, 65000], [5000, 95000]);
-  push("suv", suvModels, suvImgs, [16000, 78000], [4000, 90000]);
-  push("motorcycle", motoModels, motoImgs, [4500, 22000], [500, 35000]);
+  push("sedan", sedanModels, [12000, 65000], [5000, 95000]);
+  push("suv", suvModels, [16000, 78000], [4000, 90000]);
+  push("motorcycle", motoModels, [4500, 22000], [500, 35000]);
+
 
   return list;
 };
