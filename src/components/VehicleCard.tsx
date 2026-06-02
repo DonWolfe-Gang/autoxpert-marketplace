@@ -2,7 +2,9 @@ import { Link } from "react-router-dom";
 import { MapPin, Gauge, ShieldCheck, MessageCircle, ArrowRightLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SmartImage } from "@/components/SmartImage";
 import type { Vehicle } from "@/data/vehicles";
+
 
 interface Props {
   vehicle: Vehicle;
