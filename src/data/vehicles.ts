@@ -95,35 +95,30 @@ const cities = [
   "Philadelphia, PA", "Washington, DC", "Salt Lake City, UT",
 ];
 
-const sedanImgs = [
-  "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1584345604476-8ec5f452d1f2?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1542362567-b07e54358753?w=800&h=600&fit=crop",
-];
-const suvImgs = [
-  "https://images.unsplash.com/photo-1568844293986-8d0400f085d1?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1597007030739-6d2e7172ee7a?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1612825173281-9a193378527e?w=800&h=600&fit=crop",
-];
-const motoImgs = [
-  "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1517846693598-3c4b1f129a3d?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1571646034647-52e6ea84b28c?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1611241443322-b5c9c9d8d8b0?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1580310614729-ccd69652491d?w=800&h=600&fit=crop",
-];
+// ---------- Image resolution ----------
+// LoremFlickr returns Flickr photos matching the given keywords, locked by a
+// numeric seed so the same vehicle always renders the same image. This gives
+// us make/model-accurate pictures (e.g. an Audi Q7 actually looks like a Q7)
+// without bundling hundreds of static URLs per model.
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const typeKeyword: Record<VehicleType, string> = {
+  sedan: "sedan,car",
+  suv: "suv",
+  motorcycle: "motorcycle",
+};
+
+const vehicleImage = (
+  make: string,
+  model: string,
+  type: VehicleType,
+  seed: number,
+) => {
+  // Strip trim suffixes (e.g. "Pilot Touring" -> "pilot") so Flickr matches the model itself.
+  const baseModel = slug(model.split(/\s+/)[0]);
+  const keywords = `${slug(make)},${baseModel},${typeKeyword[type]}`;
+  return `https://loremflickr.com/800/600/${keywords}?lock=${seed}`;
+};
 
 const sellerNames = [
   "AutoXpert Certified Dealer", "Westside Auto Group", "Premier Motors",
@@ -156,7 +151,6 @@ const generate = (): Vehicle[] => {
   const push = (
     type: VehicleType,
     makeModelMap: Record<string, string[]>,
-    imgs: string[],
     priceRange: [number, number],
     mileageRange: [number, number]
   ) => {
@@ -169,8 +163,8 @@ const generate = (): Vehicle[] => {
         const condition: Condition = conditionRoll > 0.7 ? "excellent" : conditionRoll > 0.3 ? "good" : "fair";
         const verified = rand() > 0.35;
         const featured = rand() > 0.78;
-        const image = pick(imgs, rand());
         const title = `${year} ${make} ${model}`;
+        const image = vehicleImage(make, model, type, id * 10 + 1);
         const sellerName = pick(sellerNames, rand());
         const specs: VehicleSpecs = {
           engine: type === "motorcycle"
@@ -202,7 +196,12 @@ const generate = (): Vehicle[] => {
           location: pick(cities, rand()),
           condition,
           image,
-          gallery: [image, pick(imgs, rand()), pick(imgs, rand()), pick(imgs, rand())],
+          gallery: [
+            image,
+            vehicleImage(make, model, type, id * 10 + 2),
+            vehicleImage(make, model, type, id * 10 + 3),
+            vehicleImage(make, model, type, id * 10 + 4),
+          ],
           verified,
           featured,
           specs,
@@ -214,9 +213,10 @@ const generate = (): Vehicle[] => {
     }
   };
 
-  push("sedan", sedanModels, sedanImgs, [12000, 65000], [5000, 95000]);
-  push("suv", suvModels, suvImgs, [16000, 78000], [4000, 90000]);
-  push("motorcycle", motoModels, motoImgs, [4500, 22000], [500, 35000]);
+  push("sedan", sedanModels, [12000, 65000], [5000, 95000]);
+  push("suv", suvModels, [16000, 78000], [4000, 90000]);
+  push("motorcycle", motoModels, [4500, 22000], [500, 35000]);
+
 
   return list;
 };
