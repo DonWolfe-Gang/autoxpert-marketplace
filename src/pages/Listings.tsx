@@ -4,10 +4,12 @@ import { Navbar } from "@/components/Navbar";
 import { FilterBar, type Filters } from "@/components/FilterBar";
 import { VehicleCard } from "@/components/VehicleCard";
 import { vehicles } from "@/data/vehicles";
+import { useCarListings } from "@/hooks/useCarListings";
 
 const Listings = () => {
   const [searchParams] = useSearchParams();
   const initialType = searchParams.get("type") || "";
+  const { data: liveListings, loading } = useCarListings();
 
   const [filters, setFilters] = useState<Filters>({
     type: initialType as Filters["type"],
@@ -17,7 +19,8 @@ const Listings = () => {
   });
 
   const filtered = useMemo(() => {
-    let result = [...vehicles];
+    // Live (Telegram-ingested) listings always lead, static catalog backs them up.
+    let result = [...liveListings, ...vehicles];
 
     if (filters.type) result = result.filter((v) => v.type === filters.type);
     if (filters.make) result = result.filter((v) => v.make === filters.make);
@@ -38,7 +41,7 @@ const Listings = () => {
     }
 
     return result;
-  }, [filters]);
+  }, [filters, liveListings]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -47,7 +50,9 @@ const Listings = () => {
       <div className="container py-6 space-y-6">
         <div className="space-y-1">
           <h1 className="text-xl md:text-2xl font-bold">Marketplace</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} vehicles available</p>
+          <p className="text-sm text-muted-foreground">
+            {loading ? "Loading live inventory…" : `${filtered.length} vehicles available`}
+          </p>
         </div>
 
         <FilterBar filters={filters} onChange={setFilters} />
