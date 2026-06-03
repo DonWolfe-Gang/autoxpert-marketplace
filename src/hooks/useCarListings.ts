@@ -37,6 +37,7 @@ export function rowToVehicle(r: Row): Vehicle {
     condition: "good",
     type,
     verified: false,
+    featured: false,
     description: r.description ?? "",
     imageSources,
     gallerySources,
