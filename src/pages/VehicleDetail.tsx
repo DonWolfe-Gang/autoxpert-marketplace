@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft, MapPin, Gauge, Calendar, ShieldCheck, MessageCircle,
@@ -8,16 +8,51 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { vehicles } from "@/data/vehicles";
+import { vehicles, type Vehicle } from "@/data/vehicles";
 import { SmartImage } from "@/components/SmartImage";
 import { supabase } from "@/integrations/supabase/client";
-
+import { rowToVehicle } from "@/hooks/useCarListings";
 
 const VehicleDetail = () => {
   const { id } = useParams();
-  const vehicle = vehicles.find((v) => v.id === id);
+  const staticVehicle = vehicles.find((v) => v.id === id);
+  const [dbVehicle, setDbVehicle] = useState<Vehicle | null>(null);
+  const [resolving, setResolving] = useState(!staticVehicle);
   const [activeImg, setActiveImg] = useState(0);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (staticVehicle || !id) return;
+    let cancelled = false;
+    (async () => {
+      // car_listings IDs are uuids; only query when shape matches
+      const isUuid = /^[0-9a-f-]{36}$/i.test(id);
+      if (!isUuid) { setResolving(false); return; }
+      const { data, error } = await supabase
+        .from("car_listings")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) console.error(error);
+      setDbVehicle(data ? rowToVehicle(data) : null);
+      setResolving(false);
+    })();
+    return () => { cancelled = true; };
+  }, [id, staticVehicle]);
+
+  const vehicle = staticVehicle ?? dbVehicle;
+
+  if (resolving) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+          Loading vehicle…
+        </div>
+      </div>
+    );
+  }
 
   if (!vehicle) {
     return (
