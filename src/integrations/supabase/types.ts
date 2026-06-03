@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           currency: string | null
           description: string | null
+          file_unique_ids: string[]
           id: string
           images: string[]
           location: string | null
@@ -42,6 +43,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          file_unique_ids?: string[]
           id?: string
           images?: string[]
           location?: string | null
@@ -64,6 +66,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          file_unique_ids?: string[]
           id?: string
           images?: string[]
           location?: string | null
