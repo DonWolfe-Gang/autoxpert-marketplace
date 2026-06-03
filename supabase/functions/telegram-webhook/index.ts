@@ -266,32 +266,39 @@ Deno.serve(async (req) => {
   // 2) Parse + insert listing if it looks like one
   const parsed = parseListing(text);
   if (parsed) {
-    // 2a) Pull existing images for this listing (merge across album messages)
+    // 2a) Pull existing images + per-photo IDs to dedupe across retries / album parts
     const { data: existing } = await supabase
       .from("car_listings")
-      .select("images")
+      .select("images, file_unique_ids")
       .eq("source", "telegram")
       .eq("source_chat_id", message.chat.id)
       .eq("source_message_id", message.message_id)
       .maybeSingle();
 
     const priorImages: string[] = Array.isArray(existing?.images) ? existing!.images : [];
+    const priorIds: string[] = Array.isArray(existing?.file_unique_ids) ? existing!.file_unique_ids : [];
+    const seen = new Set(priorIds);
 
-    // 2b) Ingest photos through Telegram -> Storage -> public URL
-    const photos = extractPhotos(message);
-    const uploaded: string[] = [];
+    // 2b) Ingest only photos we haven't already linked to this listing
+    const photos = extractPhotos(message).filter((p) => !seen.has(p.file_unique_id));
+    const newImages: string[] = [];
+    const newIds: string[] = [];
     for (const p of photos) {
       const url = await ingestPhoto(supabase, p, message.chat.id, TELEGRAM_API_KEY, LOVABLE_API_KEY);
-      if (url) uploaded.push(url);
+      if (url) {
+        newImages.push(url);
+        newIds.push(p.file_unique_id);
+      }
     }
 
-    // de-dupe while preserving order
-    const merged = Array.from(new Set([...priorImages, ...uploaded]));
+    const mergedImages = [...priorImages, ...newImages];
+    const mergedIds = [...priorIds, ...newIds];
 
     const { error: listingErr } = await supabase.from("car_listings").upsert(
       {
         ...parsed,
-        images: merged,
+        images: mergedImages,
+        file_unique_ids: mergedIds,
         source: "telegram",
         source_chat_id: message.chat.id,
         source_message_id: message.message_id,
