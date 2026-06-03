@@ -41,7 +41,7 @@ const Listings = () => {
     }
 
     return result;
-  }, [filters]);
+  }, [filters, liveListings]);
 
   return (
     <div className="min-h-screen flex flex-col">
