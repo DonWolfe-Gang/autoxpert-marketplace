@@ -50,7 +50,9 @@ const Listings = () => {
       <div className="container py-6 space-y-6">
         <div className="space-y-1">
           <h1 className="text-xl md:text-2xl font-bold">Marketplace</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} vehicles available</p>
+          <p className="text-sm text-muted-foreground">
+            {loading ? "Loading live inventory…" : `${filtered.length} vehicles available`}
+          </p>
         </div>
 
         <FilterBar filters={filters} onChange={setFilters} />
