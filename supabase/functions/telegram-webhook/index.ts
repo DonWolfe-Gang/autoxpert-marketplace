@@ -1,8 +1,11 @@
 // Telegram webhook: receives updates from connected groups, persists raw
-// messages, parses car-listing details, and inserts into car_listings.
+// messages, parses car-listing details, downloads photos through the
+// Telegram connector gateway, uploads them to Supabase Storage, and
+// inserts the listing with public image URLs.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+const IMAGE_BUCKET = "listing-images";
 
 async function deriveTelegramWebhookSecret(telegramApiKey: string): Promise<string> {
   const data = new TextEncoder().encode(`telegram-webhook:${telegramApiKey}`);
@@ -52,12 +55,10 @@ function parseListing(text: string): ParsedListing | null {
   if (!text || text.trim().length < 10) return null;
   const lower = text.toLowerCase();
 
-  // Year (1990–current+1)
   const currentYear = new Date().getFullYear() + 1;
   const yearMatch = text.match(/\b(19[9]\d|20\d{2})\b/);
   const year = yearMatch && +yearMatch[1] <= currentYear ? +yearMatch[1] : null;
 
-  // Price: $12,500 / 12500 usd / Price: 15000
   let price: number | null = null;
   let currency = "USD";
   const priceMatch =
@@ -69,11 +70,9 @@ function parseListing(text: string): ParsedListing | null {
     if (priceMatch[2]) currency = priceMatch[2].toUpperCase();
   }
 
-  // Mileage
   const mileageMatch = text.match(/([\d,]+)\s*(?:km|mi|miles|kilometers?|kms)\b/i);
   const mileage = mileageMatch ? Number(mileageMatch[1].replace(/,/g, "")) : null;
 
-  // Make
   let make: string | null = null;
   for (const m of KNOWN_MAKES) {
     if (new RegExp(`\\b${m.replace(/[-]/g, "[- ]?")}\\b`, "i").test(lower)) {
@@ -82,7 +81,6 @@ function parseListing(text: string): ParsedListing | null {
     }
   }
 
-  // Model: token immediately after make (best-effort)
   let model: string | null = null;
   if (make) {
     const re = new RegExp(`${make.split(/[- ]/)[0]}\\s+([A-Za-z0-9-]+(?:\\s+[A-Za-z0-9-]+)?)`, "i");
@@ -90,71 +88,135 @@ function parseListing(text: string): ParsedListing | null {
     if (mm) model = mm[1].trim();
   }
 
-  // Vehicle type
   let vehicle_type: string | null = null;
   for (const [k, v] of Object.entries(TYPE_KEYWORDS)) {
     if (lower.includes(k)) { vehicle_type = v; break; }
   }
 
-  // Location: "Location: ..." line
   const locMatch = text.match(/(?:location|city|based in)[:\s]+([^\n,]+)/i);
   const location = locMatch ? locMatch[1].trim().slice(0, 120) : null;
 
-  // Contact: phone or @handle
   const phoneMatch = text.match(/(\+?\d[\d\s().-]{7,}\d)/);
   const handleMatch = text.match(/@([A-Za-z0-9_]{4,})/);
   const contact = phoneMatch?.[1] ?? (handleMatch ? `@${handleMatch[1]}` : null);
 
-  // Title: first non-empty line, or year + make + model
   const firstLine = text.split("\n").map((l) => l.trim()).find((l) => l.length > 0) ?? "";
   const composed = [year, make, model].filter(Boolean).join(" ");
   const title = (composed || firstLine).slice(0, 160) || "Untitled listing";
 
-  // Require at least one strong signal
   if (!price && !make && !year) return null;
 
-  return {
-    title,
-    price,
-    currency,
-    description: text.slice(0, 4000),
-    location,
-    contact,
-    vehicle_type,
-    make,
-    model,
-    year,
-    mileage,
-  };
+  return { title, price, currency, description: text.slice(0, 4000), location, contact, vehicle_type, make, model, year, mileage };
 }
 
-// ---------- Image extraction ----------
-async function getTelegramFileUrl(fileId: string, apiKey: string, lovableKey: string): Promise<string | null> {
+// ---------- Image pipeline ----------
+interface TelegramPhoto { file_id: string; file_unique_id: string; width?: number; height?: number; }
+
+/**
+ * Extract every distinct photo in a message. Telegram sends each photo as an
+ * array of size variants — keep the largest variant of each unique image.
+ * Also handles media groups (album messages arrive one-by-one but share
+ * media_group_id; we still process each individually here).
+ */
+function extractPhotos(message: any): TelegramPhoto[] {
+  const out: TelegramPhoto[] = [];
+  if (Array.isArray(message?.photo) && message.photo.length > 0) {
+    // pick the largest variant (last in array per Telegram spec)
+    out.push(message.photo[message.photo.length - 1]);
+  }
+  // Some clients send a single image as a document with image/* mime type
+  if (message?.document?.mime_type?.startsWith("image/") && message.document.file_id) {
+    out.push({ file_id: message.document.file_id, file_unique_id: message.document.file_unique_id });
+  }
+  return out;
+}
+
+async function telegramGetFilePath(fileId: string, telegramKey: string, lovableKey: string): Promise<string | null> {
   try {
     const res = await fetch(`${GATEWAY_URL}/getFile`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": apiKey,
+        "X-Connection-Api-Key": telegramKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ file_id: fileId }),
     });
     const json = await res.json();
-    if (!res.ok || !json?.result?.file_path) return null;
-    return `${GATEWAY_URL}/file/${json.result.file_path}`;
-  } catch {
+    if (!res.ok || !json?.result?.file_path) {
+      console.error("getFile failed:", res.status, json);
+      return null;
+    }
+    return json.result.file_path as string;
+  } catch (e) {
+    console.error("getFile threw:", e);
     return null;
   }
 }
 
-function extractPhotoFileIds(message: any): string[] {
-  const ids: string[] = [];
-  if (Array.isArray(message?.photo) && message.photo.length > 0) {
-    // largest variant is last
-    ids.push(message.photo[message.photo.length - 1].file_id);
+async function telegramDownloadFile(filePath: string, telegramKey: string, lovableKey: string): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+  try {
+    const res = await fetch(`${GATEWAY_URL}/file/${filePath}`, {
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": telegramKey,
+      },
+    });
+    if (!res.ok) {
+      console.error("file download failed:", res.status);
+      return null;
+    }
+    const contentType = res.headers.get("content-type") ?? "image/jpeg";
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    return { bytes, contentType };
+  } catch (e) {
+    console.error("file download threw:", e);
+    return null;
   }
-  return ids;
+}
+
+function extFromContentType(ct: string): string {
+  if (ct.includes("png")) return "png";
+  if (ct.includes("webp")) return "webp";
+  if (ct.includes("gif")) return "gif";
+  return "jpg";
+}
+
+/**
+ * Download a Telegram photo, upload to storage, return the public URL.
+ * Uses file_unique_id for a deterministic, idempotent storage path so the
+ * same photo across retries / edits never produces duplicates.
+ */
+async function ingestPhoto(
+  supabase: any,
+  photo: TelegramPhoto,
+  chatId: number,
+  telegramKey: string,
+  lovableKey: string,
+): Promise<string | null> {
+  const filePath = await telegramGetFilePath(photo.file_id, telegramKey, lovableKey);
+  if (!filePath) return null;
+
+  const dl = await telegramDownloadFile(filePath, telegramKey, lovableKey);
+  if (!dl) return null;
+
+  const ext = extFromContentType(dl.contentType);
+  const objectPath = `telegram/${chatId}/${photo.file_unique_id}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from(IMAGE_BUCKET)
+    .upload(objectPath, dl.bytes, {
+      contentType: dl.contentType,
+      upsert: true,
+      cacheControl: "31536000",
+    });
+  if (upErr && !String(upErr.message ?? "").toLowerCase().includes("exists")) {
+    console.error("storage upload failed:", upErr);
+    return null;
+  }
+
+  const { data: pub } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(objectPath);
+  return pub?.publicUrl ?? null;
 }
 
 Deno.serve(async (req) => {
@@ -204,18 +266,32 @@ Deno.serve(async (req) => {
   // 2) Parse + insert listing if it looks like one
   const parsed = parseListing(text);
   if (parsed) {
-    // Resolve image URLs (best-effort)
-    const fileIds = extractPhotoFileIds(message);
-    const imageUrls: string[] = [];
-    for (const fid of fileIds) {
-      const url = await getTelegramFileUrl(fid, TELEGRAM_API_KEY, LOVABLE_API_KEY);
-      if (url) imageUrls.push(url);
+    // 2a) Pull existing images for this listing (merge across album messages)
+    const { data: existing } = await supabase
+      .from("car_listings")
+      .select("images")
+      .eq("source", "telegram")
+      .eq("source_chat_id", message.chat.id)
+      .eq("source_message_id", message.message_id)
+      .maybeSingle();
+
+    const priorImages: string[] = Array.isArray(existing?.images) ? existing!.images : [];
+
+    // 2b) Ingest photos through Telegram -> Storage -> public URL
+    const photos = extractPhotos(message);
+    const uploaded: string[] = [];
+    for (const p of photos) {
+      const url = await ingestPhoto(supabase, p, message.chat.id, TELEGRAM_API_KEY, LOVABLE_API_KEY);
+      if (url) uploaded.push(url);
     }
+
+    // de-dupe while preserving order
+    const merged = Array.from(new Set([...priorImages, ...uploaded]));
 
     const { error: listingErr } = await supabase.from("car_listings").upsert(
       {
         ...parsed,
-        images: imageUrls,
+        images: merged,
         source: "telegram",
         source_chat_id: message.chat.id,
         source_message_id: message.message_id,
